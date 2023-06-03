@@ -8,6 +8,9 @@ Transfer, initialize account, burn, close account
     CloseAccount = 9,
 */
 
+/** Address of the SPL Token program */
+export const TOKEN_PROGRAM_ID = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
+
 /*
 
 export async function createAccount(
@@ -43,6 +46,32 @@ export async function createAccount(
     return keypair.publicKey;
 }
 
+--------------------
+
+export function createInitializeAccountInstruction(
+    account: PublicKey,
+    mint: PublicKey,
+    owner: PublicKey,
+    programId = TOKEN_PROGRAM_ID
+): TransactionInstruction {
+    const keys = [
+        { pubkey: account, isSigner: false, isWritable: true },
+        { pubkey: mint, isSigner: false, isWritable: false },
+        { pubkey: owner, isSigner: false, isWritable: false },
+        { pubkey: SYSVAR_RENT_PUBKEY, isSigner: false, isWritable: false },
+    ];
+
+    const data = Buffer.alloc(initializeAccountInstructionData.span);
+    initializeAccountInstructionData.encode({ instruction: TokenInstruction.InitializeAccount }, data);
+
+    return new TransactionInstruction({ keys, programId, data });
+}
+
+-------------------
+
+/** TODO: docs 
+export const initializeAccountInstructionData = struct<InitializeAccountInstructionData>([u8('instruction')]);
+
 //-------------------------
 
 export async function closeAccount(
@@ -64,6 +93,35 @@ export async function closeAccount(
     return await sendAndConfirmTransaction(connection, transaction, [payer, ...signers], confirmOptions);
 }
 
+----------------
+
+export function createCloseAccountInstruction(
+    account: PublicKey,
+    destination: PublicKey,
+    authority: PublicKey,
+    multiSigners: (Signer | PublicKey)[] = [],
+    programId = TOKEN_PROGRAM_ID
+): TransactionInstruction {
+    const keys = addSigners(
+        [
+            { pubkey: account, isSigner: false, isWritable: true },
+            { pubkey: destination, isSigner: false, isWritable: true },
+        ],
+        authority,
+        multiSigners
+    );
+
+    const data = Buffer.alloc(closeAccountInstructionData.span);
+    closeAccountInstructionData.encode({ instruction: TokenInstruction.CloseAccount }, data);
+
+    return new TransactionInstruction({ keys, programId, data });
+}
+
+
+---------------
+    
+    /** TODO: docs 
+export const closeAccountInstructionData = struct<CloseAccountInstructionData>([u8('instruction')]);
 
 //--------------------------
 
@@ -87,6 +145,44 @@ export async function burn(
     return await sendAndConfirmTransaction(connection, transaction, [payer, ...signers], confirmOptions);
 }
 
+----------------
+
+
+export function createBurnInstruction(
+    account: PublicKey,
+    mint: PublicKey,
+    owner: PublicKey,
+    amount: number | bigint,
+    multiSigners: (Signer | PublicKey)[] = [],
+    programId = TOKEN_PROGRAM_ID
+): TransactionInstruction {
+    const keys = addSigners(
+        [
+            { pubkey: account, isSigner: false, isWritable: true },
+            { pubkey: mint, isSigner: false, isWritable: true },
+        ],
+        owner,
+        multiSigners
+    );
+
+    const data = Buffer.alloc(burnInstructionData.span);
+    burnInstructionData.encode(
+        {
+            instruction: TokenInstruction.Burn,
+            amount: BigInt(amount),
+        },
+        data
+    );
+
+    return new TransactionInstruction({ keys, programId, data });
+}
+
+-------------
+    
+    /** TODO: docs 
+export const burnInstructionData = struct<BurnInstructionData>([u8('instruction'), u64('amount')]);
+
+
 //----------------------------
 
 export async function transfer(
@@ -108,6 +204,44 @@ export async function transfer(
 
     return await sendAndConfirmTransaction(connection, transaction, [payer, ...signers], confirmOptions);
 }
+
+----------------------
+
+
+export function createTransferInstruction(
+    source: PublicKey,
+    destination: PublicKey,
+    owner: PublicKey,
+    amount: number | bigint,
+    multiSigners: (Signer | PublicKey)[] = [],
+    programId = TOKEN_PROGRAM_ID
+): TransactionInstruction {
+    const keys = addSigners(
+        [
+            { pubkey: source, isSigner: false, isWritable: true },
+            { pubkey: destination, isSigner: false, isWritable: true },
+        ],
+        owner,
+        multiSigners
+    );
+
+    const data = Buffer.alloc(transferInstructionData.span);
+    transferInstructionData.encode(
+        {
+            instruction: TokenInstruction.Transfer,
+            amount: BigInt(amount),
+        },
+        data
+    );
+
+    return new TransactionInstruction({ keys, programId, data });
+}
+
+-----------------
+    
+    /** TODO: docs 
+export const transferInstructionData = struct<TransferInstructionData>([u8('instruction'), u64('amount')]);
+
 
 
 */
