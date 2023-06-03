@@ -8,6 +8,111 @@ Transfer, initialize account, burn, close account
     CloseAccount = 9,
 */
 
+/*
+
+export async function createAccount(
+    connection: Connection,
+    payer: Signer,
+    mint: PublicKey,
+    owner: PublicKey,
+    keypair?: Keypair,
+    confirmOptions?: ConfirmOptions,
+    programId = TOKEN_PROGRAM_ID
+): Promise<PublicKey> {
+    // If a keypair isn't provided, create the associated token account and return its address
+    if (!keypair) return await createAssociatedTokenAccount(connection, payer, mint, owner, confirmOptions, programId);
+
+    // Otherwise, create the account with the provided keypair and return its public key
+    const mintState = await getMint(connection, mint, confirmOptions?.commitment, programId);
+    const space = getAccountLenForMint(mintState);
+    const lamports = await connection.getMinimumBalanceForRentExemption(space);
+
+    const transaction = new Transaction().add(
+        SystemProgram.createAccount({
+            fromPubkey: payer.publicKey,
+            newAccountPubkey: keypair.publicKey,
+            space,
+            lamports,
+            programId,
+        }),
+        createInitializeAccountInstruction(keypair.publicKey, mint, owner, programId)
+    );
+
+    await sendAndConfirmTransaction(connection, transaction, [payer, keypair], confirmOptions);
+
+    return keypair.publicKey;
+}
+
+//-------------------------
+
+export async function closeAccount(
+    connection: Connection,
+    payer: Signer,
+    account: PublicKey,
+    destination: PublicKey,
+    authority: Signer | PublicKey,
+    multiSigners: Signer[] = [],
+    confirmOptions?: ConfirmOptions,
+    programId = TOKEN_PROGRAM_ID
+): Promise<TransactionSignature> {
+    const [authorityPublicKey, signers] = getSigners(authority, multiSigners);
+
+    const transaction = new Transaction().add(
+        createCloseAccountInstruction(account, destination, authorityPublicKey, multiSigners, programId)
+    );
+
+    return await sendAndConfirmTransaction(connection, transaction, [payer, ...signers], confirmOptions);
+}
+
+
+//--------------------------
+
+export async function burn(
+    connection: Connection,
+    payer: Signer,
+    account: PublicKey,
+    mint: PublicKey,
+    owner: Signer | PublicKey,
+    amount: number | bigint,
+    multiSigners: Signer[] = [],
+    confirmOptions?: ConfirmOptions,
+    programId = TOKEN_PROGRAM_ID
+): Promise<TransactionSignature> {
+    const [ownerPublicKey, signers] = getSigners(owner, multiSigners);
+
+    const transaction = new Transaction().add(
+        createBurnInstruction(account, mint, ownerPublicKey, amount, multiSigners, programId)
+    );
+
+    return await sendAndConfirmTransaction(connection, transaction, [payer, ...signers], confirmOptions);
+}
+
+//----------------------------
+
+export async function transfer(
+    connection: Connection,
+    payer: Signer,
+    source: PublicKey,
+    destination: PublicKey,
+    owner: Signer | PublicKey,
+    amount: number | bigint,
+    multiSigners: Signer[] = [],
+    confirmOptions?: ConfirmOptions,
+    programId = TOKEN_PROGRAM_ID
+): Promise<TransactionSignature> {
+    const [ownerPublicKey, signers] = getSigners(owner, multiSigners);
+
+    const transaction = new Transaction().add(
+        createTransferInstruction(source, destination, ownerPublicKey, amount, multiSigners, programId)
+    );
+
+    return await sendAndConfirmTransaction(connection, transaction, [payer, ...signers], confirmOptions);
+}
+
+
+*/
+
+
 /** Instructions defined by the program */
 export enum TokenInstruction {
     InitializeMint = 0,
