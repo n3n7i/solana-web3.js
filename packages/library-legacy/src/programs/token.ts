@@ -11,6 +11,33 @@ Transfer, initialize account, burn, close account
 /** Address of the SPL Token program */
 export const TOKEN_PROGRAM_ID = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
 
+//
+//    Quick instruction encoder
+//    for 
+//    sig: uint8 instruction, uint64 amount
+//        [Transfer, Burn]
+//
+
+
+function bignumber_Encode(n, dec, i){
+
+  var n2 = BigInt(n)* BigInt(10**dec);
+  //console.log(n2);
+  var k = BigInt(256);
+  var j=0;
+  var res = [];
+  res[0] = i;
+  j++;
+  while(n2>0){
+    res[j] =  Number(n2 % k); //Number();
+    n2 = (n2 - BigInt(res[j])) / BigInt(256);
+    j++;
+    }
+  while(j<9) res[j++] =0;
+  //console.log(res);
+  return res;
+  }
+
 /*
 
 export async function createAccount(
