@@ -79,7 +79,34 @@ export async function createAccount(
 
     return keypair.publicKey;
 }
+--------------------
 
+export async function createAssociatedTokenAccount(
+    connection: Connection,
+    payer: Signer,
+    mint: PublicKey,
+    owner: PublicKey,
+    confirmOptions?: ConfirmOptions,
+    programId = TOKEN_PROGRAM_ID,
+    associatedTokenProgramId = ASSOCIATED_TOKEN_PROGRAM_ID
+): Promise<PublicKey> {
+    const associatedToken = getAssociatedTokenAddressSync(mint, owner, false, programId, associatedTokenProgramId);
+
+    const transaction = new Transaction().add(
+        createAssociatedTokenAccountInstruction(
+            payer.publicKey,
+            associatedToken,
+            owner,
+            mint,
+            programId,
+            associatedTokenProgramId
+        )
+    );
+
+    await sendAndConfirmTransaction(connection, transaction, [payer], confirmOptions);
+
+    return associatedToken;
+}
 --------------------
 
 export function createInitializeAccountInstruction(
@@ -105,6 +132,64 @@ export function createInitializeAccountInstruction(
 
 /** TODO: docs 
 export const initializeAccountInstructionData = struct<InitializeAccountInstructionData>([u8('instruction')]);
+
+------------------
+
+/** Token account as stored by the program 
+export interface RawAccount {
+    mint: PublicKey;
+    owner: PublicKey;
+    amount: bigint;
+    delegateOption: 1 | 0;
+    delegate: PublicKey;
+    state: AccountState;
+    isNativeOption: 1 | 0;
+    isNative: bigint;
+    delegatedAmount: bigint;
+    closeAuthorityOption: 1 | 0;
+    closeAuthority: PublicKey;
+}
+
+/** Buffer layout for de/serializing a token account 
+export const AccountLayout = struct<RawAccount>([
+    publicKey('mint'),
+    publicKey('owner'),
+    u64('amount'),
+    u32('delegateOption'),
+    publicKey('delegate'),
+    u8('state'),
+    u32('isNativeOption'),
+    u64('isNative'),
+    u64('delegatedAmount'),
+    u32('closeAuthorityOption'),
+    publicKey('closeAuthority'),
+]);
+
+// 4-byte bools? [u32's]
+
+account size: 32+32+8+4+32+1+4+8+8+4+32
+32*4 + 8*3 + 4*3 + 1
+-> 32*5 + 4*1 + 1
+> 160 +5 
+-----------------------------
+
+export async function getAssociatedTokenAddress(
+    mint: PublicKey,
+    owner: PublicKey,
+    allowOwnerOffCurve = false,
+    programId = TOKEN_PROGRAM_ID,
+    associatedTokenProgramId = ASSOCIATED_TOKEN_PROGRAM_ID
+): Promise<PublicKey> {
+    if (!allowOwnerOffCurve && !PublicKey.isOnCurve(owner.toBuffer())) throw new TokenOwnerOffCurveError();
+
+    const [address] = await PublicKey.findProgramAddress(
+        [owner.toBuffer(), programId.toBuffer(), mint.toBuffer()],
+        associatedTokenProgramId
+    );
+
+    return address;
+}
+
 
 //-------------------------
 
