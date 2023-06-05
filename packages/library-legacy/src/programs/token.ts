@@ -21,7 +21,7 @@ export const TOKEN_PROGRAM_ID = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9
 
 function bignumber_Encode(n, dec, i){
 
-  var n2 = BigInt(n)* BigInt(10**dec);
+  var n2 = BigInt(n)* BigInt(10**dec); /// non-Integer n Err! vs poor precision[rare?]
   //console.log(n2);
   var k = BigInt(256);
   var j=0;
