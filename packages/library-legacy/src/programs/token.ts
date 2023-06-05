@@ -1,8 +1,15 @@
 // token transfer functionality // 
 
+// duplicate from
+//    solana-program-library/token/js/src/actions/
+//           +
+//    solana-program-library/token/js/src/instructions/
+
+/
+
 /*  -- basic token functions --
 Transfer, initialize account, burn, close account
-    InitializeAccount = 1,
+    InitializeAccount = 1,(?)
     Transfer = 3,
     Burn = 8,
     CloseAccount = 9,
