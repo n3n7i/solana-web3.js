@@ -56,23 +56,23 @@ export async function createAccount(
     confirmOptions?: ConfirmOptions,
     programId = TOKEN_PROGRAM_ID
 ): Promise<PublicKey> {
-    // If a keypair isn't provided, create the associated token account and return its address
-    if (!keypair) return await createAssociatedTokenAccount(connection, payer, mint, owner, confirmOptions, programId);
+    // If a keypair isn't provided, create the associated token account and return its address 
+    if (!keypair) return await createAssociatedTokenAccount(connection, payer, mint, owner, confirmOptions, programId); // ** #2 **
 
-    // Otherwise, create the account with the provided keypair and return its public key
+    // Otherwise, create the account with the provided keypair and return its public key         // On-curve token accounts?
     const mintState = await getMint(connection, mint, confirmOptions?.commitment, programId);
     const space = getAccountLenForMint(mintState);
     const lamports = await connection.getMinimumBalanceForRentExemption(space);
 
     const transaction = new Transaction().add(
-        SystemProgram.createAccount({
+        SystemProgram.createAccount({                              // ** #? # ** (System_prog instruction #1?)
             fromPubkey: payer.publicKey,
             newAccountPubkey: keypair.publicKey,
             space,
             lamports,
             programId,
         }),
-        createInitializeAccountInstruction(keypair.publicKey, mint, owner, programId)
+        createInitializeAccountInstruction(keypair.publicKey, mint, owner, programId)               // **  #3   ** [(token prog Instr $1)]
     );
 
     await sendAndConfirmTransaction(connection, transaction, [payer, keypair], confirmOptions);
@@ -81,7 +81,7 @@ export async function createAccount(
 }
 --------------------
 
-export async function createAssociatedTokenAccount(
+export async function createAssociatedTokenAccount(   // ** #2 **
     connection: Connection,
     payer: Signer,
     mint: PublicKey,
@@ -90,10 +90,10 @@ export async function createAssociatedTokenAccount(
     programId = TOKEN_PROGRAM_ID,
     associatedTokenProgramId = ASSOCIATED_TOKEN_PROGRAM_ID
 ): Promise<PublicKey> {
-    const associatedToken = getAssociatedTokenAddressSync(mint, owner, false, programId, associatedTokenProgramId);
+    const associatedToken = getAssociatedTokenAddressSync(mint, owner, false, programId, associatedTokenProgramId); // ** #4 **  (## publickey.find_addr)
 
     const transaction = new Transaction().add(
-        createAssociatedTokenAccountInstruction(
+        createAssociatedTokenAccountInstruction(          // ** #5 **  (Associated_token_program instruction #1?)
             payer.publicKey,
             associatedToken,
             owner,
@@ -109,7 +109,7 @@ export async function createAssociatedTokenAccount(
 }
 --------------------
 
-export function createInitializeAccountInstruction(
+export function createInitializeAccountInstruction(     // ** #3 ** (token prog Instr $1)
     account: PublicKey,
     mint: PublicKey,
     owner: PublicKey,
@@ -173,7 +173,7 @@ account size: 32+32+8+4+32+1+4+8+8+4+32
 > 160 +5 
 -----------------------------
 
-export async function getAssociatedTokenAddress(
+export async function getAssociatedTokenAddress( // ** #4 **    (## publickey.find_addr)
     mint: PublicKey,
     owner: PublicKey,
     allowOwnerOffCurve = false,
@@ -190,6 +190,32 @@ export async function getAssociatedTokenAddress(
     return address;
 }
 
+---------------------------
+
+function buildAssociatedTokenAccountInstruction(     // ** 5 **
+    payer: PublicKey,
+    associatedToken: PublicKey,
+    owner: PublicKey,
+    mint: PublicKey,
+    instructionData: Buffer,
+    programId = TOKEN_PROGRAM_ID,
+    associatedTokenProgramId = ASSOCIATED_TOKEN_PROGRAM_ID
+): TransactionInstruction {
+    const keys = [
+        { pubkey: payer, isSigner: true, isWritable: true },
+        { pubkey: associatedToken, isSigner: false, isWritable: true },
+        { pubkey: owner, isSigner: false, isWritable: false },
+        { pubkey: mint, isSigner: false, isWritable: false },
+        { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+        { pubkey: programId, isSigner: false, isWritable: false },
+    ];
+
+    return new TransactionInstruction({
+        keys,
+        programId: associatedTokenProgramId,
+        data: instructionData,
+    });
+}
 
 //-------------------------
 
