@@ -9,10 +9,18 @@
 
 /*  -- basic token functions --
 Transfer, initialize account, burn, close account
-    InitializeAccount = 1,(?)
+    InitializeAccount = 1,(? use Associated token program!)
     Transfer = 3,
     Burn = 8,
     CloseAccount = 9,
+    ----------
+extensions?
+    approve = 4
+    revoke = 5
+    setauth = 6
+
+    initMint = 0
+    mintto = 7
 */
 
 /** Address of the SPL Token program */
@@ -22,7 +30,7 @@ export const TOKEN_PROGRAM_ID = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9
 //    Quick instruction encoder
 //    for 
 //    sig: uint8 instruction, uint64 amount
-//        [Transfer, Burn]
+//        [Transfer, Burn, Approve, Mintto]
 //
 
 
@@ -387,9 +395,154 @@ export function createTransferInstruction(
     /** TODO: docs 
 export const transferInstructionData = struct<TransferInstructionData>([u8('instruction'), u64('amount')]);
 
+//--------------------------------------
+
+export function createApproveInstruction(
+    account: PublicKey,
+    delegate: PublicKey,
+    owner: PublicKey,
+    amount: number | bigint,
+    multiSigners: (Signer | PublicKey)[] = [],
+    programId = TOKEN_PROGRAM_ID
+): TransactionInstruction {
+    const keys = addSigners(
+        [
+            { pubkey: account, isSigner: false, isWritable: true },
+            { pubkey: delegate, isSigner: false, isWritable: false },
+        ],
+        owner,
+        multiSigners
+    );
+
+    const data = Buffer.alloc(approveInstructionData.span);
+    approveInstructionData.encode(
+        {
+            instruction: TokenInstruction.Approve,
+            amount: BigInt(amount),
+        },
+        data
+    );
+
+    return new TransactionInstruction({ keys, programId, data });
+}
+
+//-------------------------------------------
+
+/** Authority types defined by the program 
+export enum AuthorityType {
+    MintTokens = 0,
+    FreezeAccount = 1,
+    AccountOwner = 2,
+    CloseAccount = 3,
+}
+
+export function createSetAuthorityInstruction(
+    account: PublicKey,
+    currentAuthority: PublicKey,
+    authorityType: AuthorityType,
+    newAuthority: PublicKey | null,
+    multiSigners: (Signer | PublicKey)[] = [],
+    programId = TOKEN_PROGRAM_ID
+): TransactionInstruction {
+    const keys = addSigners([{ pubkey: account, isSigner: false, isWritable: true }], currentAuthority, multiSigners);
+
+    const data = Buffer.alloc(setAuthorityInstructionData.span);
+    setAuthorityInstructionData.encode(
+        {
+            instruction: TokenInstruction.SetAuthority,
+            authorityType,
+            newAuthorityOption: newAuthority ? 1 : 0,
+            newAuthority: newAuthority || new PublicKey(0),
+        },
+        data
+    );
+
+    return new TransactionInstruction({ keys, programId, data });
+}
+
+//-------------------------------------------
+
+
+/**
+ * Construct a Revoke instruction
+ *
+ * @param account      Address of the token account
+ * @param owner        Owner of the account
+ * @param multiSigners Signing accounts if `owner` is a multisig
+ * @param programId    SPL Token program account
+ *
+ * @return Instruction to add to a transaction
+ //
+export function createRevokeInstruction(
+    account: PublicKey,
+    owner: PublicKey,
+    multiSigners: (Signer | PublicKey)[] = [],
+    programId = TOKEN_PROGRAM_ID
+): TransactionInstruction {
+    const keys = addSigners([{ pubkey: account, isSigner: false, isWritable: true }], owner, multiSigners);
+
+    const data = Buffer.alloc(revokeInstructionData.span);
+    revokeInstructionData.encode({ instruction: TokenInstruction.Revoke }, data);
+
+    return new TransactionInstruction({ keys, programId, data });
+}
+
+
+//-------------------------------------------------
+
+/**
+ * Construct a MintTo instruction
+ *
+ * @param mint         Public key of the mint
+ * @param destination  Address of the token account to mint to
+ * @param authority    The mint authority
+ * @param amount       Amount to mint
+ * @param multiSigners Signing accounts if `authority` is a multisig
+ * @param programId    SPL Token program account
+ *
+ * @return Instruction to add to a transaction
+ *
+export function createMintToInstruction(
+    mint: PublicKey,
+    destination: PublicKey,
+    authority: PublicKey,
+    amount: number | bigint,
+    multiSigners: (Signer | PublicKey)[] = [],
+    programId = TOKEN_PROGRAM_ID
+): TransactionInstruction {
+    const keys = addSigners(
+        [
+            { pubkey: mint, isSigner: false, isWritable: true },
+            { pubkey: destination, isSigner: false, isWritable: true },
+        ],
+        authority,
+        multiSigners
+    );
+
+    const data = Buffer.alloc(mintToInstructionData.span);
+    mintToInstructionData.encode(
+        {
+            instruction: TokenInstruction.MintTo,
+            amount: BigInt(amount),
+        },
+
+//------------------------
+
+
+/** TODO: docs /
+export const initializeMintInstructionData = struct<InitializeMintInstructionData>([
+    u8('instruction'),
+    u8('decimals'),
+    publicKey('mintAuthority'),
+    u8('freezeAuthorityOption'),
+    publicKey('freezeAuthority'),
+]);
+
 
 
 */
+
+
 
 
 /** Instructions defined by the program */
