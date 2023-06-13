@@ -538,6 +538,30 @@ export const initializeMintInstructionData = struct<InitializeMintInstructionDat
     publicKey('freezeAuthority'),
 ]);
 
+/** Mint as stored by the program /
+export interface RawMint {
+    mintAuthorityOption: 1 | 0;
+    mintAuthority: PublicKey;
+    supply: bigint;
+    decimals: number;
+    isInitialized: boolean;
+    freezeAuthorityOption: 1 | 0;
+    freezeAuthority: PublicKey;
+}
+
+/** Buffer layout for de/serializing a mint /
+export const MintLayout = struct<RawMint>([
+    u32('mintAuthorityOption'),             4+32+8+1+4+4+32 = [64 +16 +5] = 85 ?
+    publicKey('mintAuthority'),
+    u64('supply'),
+    u8('decimals'),
+    bool('isInitialized'),
+    u32('freezeAuthorityOption'),
+    publicKey('freezeAuthority'),
+]);
+
+/** Byte length of a mint /
+export const MINT_SIZE = MintLayout.span;
 
 
 */
