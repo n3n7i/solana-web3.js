@@ -563,6 +563,31 @@ export const MintLayout = struct<RawMint>([
 /** Byte length of a mint /
 export const MINT_SIZE = MintLayout.span;
 
+--------------------------------------------------------------
+
+/** Authority types defined by the program /
+export enum AuthorityType {
+    MintTokens = 0,
+    FreezeAccount = 1,
+    AccountOwner = 2,
+    CloseAccount = 3,
+}
+
+/** TODO: docs /
+export interface SetAuthorityInstructionData {
+    instruction: TokenInstruction.SetAuthority;
+    authorityType: AuthorityType;
+    newAuthorityOption: 1 | 0;
+    newAuthority: PublicKey;
+}
+
+/** TODO: docs /
+export const setAuthorityInstructionData = struct<SetAuthorityInstructionData>([
+    u8('instruction'),
+    u8('authorityType'),
+    u8('newAuthorityOption'),
+    publicKey('newAuthority'),
+]);
 
 */
 
